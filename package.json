@@ -161,6 +161,11 @@
         "name" : "Chad Walker",
         "email" : "chad@chad-cat-lore-eddie.com",
         "url" : "https://github.com/chad3814"
+      },
+      {
+        "name" : "Philipp Schmidt",
+        "email" : "mail@philippsimon.de",
+        "url" : "https://github.com/philippsimon"
       }
     ],
     "bugs": {
@@ -187,7 +192,9 @@
        "request"    : "2.x",
        "cssom"      : "0.2.x",
        "cssstyle"   : ">=0.2.3",
-       "contextify" : "0.1.x"
+       "contextify" : "0.1.x",
+       "iconv"      : "*",
+       "node-icu-charset-detector": "*"
     },
     "optionalDependencies": {
        "contextify" : "0.1.x"
