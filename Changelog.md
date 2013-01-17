@@ -1,7 +1,36 @@
+## 0.3.4
+
+ * Fix: stylesheets with `@media` rules were crashing calls to `getComputedStyle`, e.g. those in jQuery's initialization.
+
+## 0.3.3
+
+ * Fix: make `document.write` calls insert new elements correctly. (johanoverip, kblomquist).
+ * Fix: `<input>` tags with no `type` attribute now return a default value of `"text"` when calling `inputEl.getAttribute("type")`.
+
+## 0.3.2
+
+ * Fix: stylesheets with "joining" rules (i.e. those containing comma-separated selectors) now apply when using `getComputedStyle`. (chad3814, godmar)
+ * Add: support for running the tests using @aredridel's [html5](https://npmjs.org/package/html5) parser, as a prelude toward maybe eventually making this the default and fixing various parsing bugs.
+
+## 0.3.1 (hotfix)
+
+ * Fix: crashes when invalid selectors were present in stylesheets.
+
+## 0.3.0
+
+ * Fix: a real `querySelector` implementation, courtesy of the nwmatcher project, solves many outstanding `querySelector` bugs.
+ * Add: `matchesSelector`, again via nwmatcher.
+ * Add: support for styles coming from `<style>` and `<link rel="stylesheet">` elements being applied to the results of `window.getComputedStyle`. (chad3814)
+ * Add: basic implementation of `focus()` and `blur()` methods on appropriate elements. More work remains.
+ * Fix: script filenames containing spaces will now work when passed to `jsdom.env`. (TomNomNom)
+ * Fix: elements with IDs `toString`, `hasOwnProperty`, etc. could cause lots of problems.
+ * Change: A window's `load` event always fires asynchronously now, even if no external resources are necessary.
+ * Change: turning off mutation events is not supported, since doing so breaks external-resource fetching.
+
 ## 0.2.19
 
  * Fix: URL resolution was broken on pages that included `href`-less `<base>` tags.
- * Fix: avoid putting `attr` in the global scope when using node-canvas.
+ * Fix: avoid putting `attr` in the global scope when using node-canvas. (starsquare)
  * Add: New `SkipExternalResources` feature accepts a regular expression. (fgalassi)
 
 ## 0.2.18

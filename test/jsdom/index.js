@@ -56,6 +56,17 @@ exports.tests = {
     test.done();
   },
 
+  jquerify_attribute_selector_gh_400: function(test) {
+    var window = jsdom.jsdom().createWindow();
+
+    jsdom.jQueryify(window, "http://code.jquery.com/jquery.js", function () {
+      window.$("body").append('<html><body><div data-foo="bar"/><div data-baz="foo"/></body></html>');
+
+      test.equal(window.$('*[data-foo]').length, 1);
+      test.done();
+    });
+  },
+
   env_with_absolute_file: function(test) {
     jsdom.env({
       html: path.join(__dirname, 'files', 'env.html'),
@@ -573,7 +584,7 @@ exports.tests = {
 
   queryselector: function(test) {
     var html = '<html><body><div id="main"><p class="foo">Foo</p><p>Bar</p></div></body></html>',
-        document = jsdom.jsdom(html, null, {features: {'QuerySelector': true}}),
+        document = jsdom.jsdom(html),
         div = document.body.children.item(0);
     var element = document.querySelector("#main p");
     test.equal(element, div.children.item(0), 'p and first-p');
@@ -581,13 +592,15 @@ exports.tests = {
     test.equal(element2, div.children.item(0), 'p and first-p');
     var element3 = document.querySelector("#main p:not(.foo)");
     test.equal(element3, div.children.item(1), 'p and second-p');
+    var element3 = document.querySelector("#asdf");
+    test.equal(element3, null, 'nonexistent becomes null');
     test.done();
   },
 
   // TODO: look into breaking into a testcase
   queryselectorall: function(test) {
-    var html = '<html><body><div id="main"><p>Foo</p><p>Bar</p></div></body></html>',
-        document = jsdom.jsdom(html, null, {features: {'QuerySelector': true}}),
+    var html = '<html><body><div id="main"><p>Foo</p><p>Bar</p></div><div id="next"><div id="next-child"><p>Baz</p></div></div></body></html>',
+        document = jsdom.jsdom(html, null),
         div = document.body.children.item(0),
         elements = document.querySelectorAll("#main p");
     test.equal(elements.length, 2, 'two results');
@@ -597,6 +610,8 @@ exports.tests = {
     test.equal(elements2.length, 2, 'two results');
     test.equal(elements2.item(0), div.children.item(0), 'p and first-p');
     test.equal(elements2.item(1), div.children.item(1), 'p and second-p');
+    test.equal(div.querySelectorAll("#main").length, 0, 'It should not return the base element');
+    test.equal(div.querySelectorAll("div").length, 0, 'There are no div elements under div#main');
     var elements3 = div.querySelectorAll("#main p");
     test.equal(elements3.length, 2, 'two results');
     test.equal(elements3.item(0), div.children.item(0), 'p and first-p');
@@ -606,24 +621,38 @@ exports.tests = {
     topNode.id = "fuz";
     newNode.id = "buz";
     topNode.appendChild(newNode);
+    test.equal(topNode.querySelectorAll("#fuz").length, 0, "It should not return the base element that is orphaned");
     var elements4 = topNode.querySelectorAll("#fuz #buz");
     test.equal(elements4.length, 1, 'one result');
     test.equal(elements4.item(0), newNode, 'newNode and first-p');
+    var elements5 = div.querySelectorAll('p');
+    test.equal(elements5.length, 2, "It should not return elements that are not within the base element's subtrees");
+    test.equal(elements5.item(0), div.children.item(0), 'p and first-p');
+    test.equal(elements5.item(1), div.children.item(1), 'p and second-p');
+    test.equal(topNode.parentNode, null, 'topNode.parentNode is null');
+    var nextChildDiv = document.getElementById('next-child');
+    var elements6 = nextChildDiv.querySelectorAll('p');
+    test.equal(elements6.length, 1, 'p under div#next-child');
+    test.equal(elements6.item(0), nextChildDiv.children.item(0), 'child of div#next-child');
     test.done();
   },
 
-  turn_off_queryselector: function(test) {
-    var html = '<html><body></body></html>',
-        document = jsdom.jsdom(html, null, {features: {'QuerySelector': true}});
-    test.equal(typeof document.querySelector, 'function', 'document.querySelector function exists');
-    test.equal(typeof document.querySelectorAll, 'function', 'document.querySelectorAll function exists');
-    test.equal(typeof document.body.querySelector, 'function', 'document.body.querySelector function exists');
-    test.equal(typeof document.body.querySelectorAll, 'function', 'document.body.querySelectorAll function exists');
-    document = jsdom.jsdom(html, null);
-    test.equal(typeof document.querySelector, 'undefined', 'document.querySelector does not exist');
-    test.equal(typeof document.querySelectorAll, 'undefined', 'document.querySelectorAll does not exist');
-    test.equal(typeof document.body.querySelector, 'undefined', 'document.body.querySelector does not exist');
-    test.equal(typeof document.body.querySelectorAll, 'undefined', 'document.body.querySelectorAll does not exist');
+  matchesselector: function(test) {
+    var html = '<html><body><div id="main"><p class="foo">Foo</p><p>Bar</p></div></body></html>';
+    var document = jsdom.jsdom(html);
+    var div = document.body.children.item(0);
+
+    var element = document.querySelector("#main p");
+    test.equal(element.matchesSelector("#main p"), true, 'p and first-p');
+    var element2 = div.querySelector("p");
+    test.equal(element2.matchesSelector("p"), true, 'p and first-p');
+    var element3 = document.querySelector("#main p:not(.foo)");
+    test.equal(element3.matchesSelector("#main p:not(.foo)"), true, 'p and second-p');
+
+    test.equal(element.matchesSelector("#asdf"), false, "doesn't match wrong selector");
+    test.equal(element2.matchesSelector("#asdf"), false, "doesn't match wrong selector");
+    test.equal(element3.matchesSelector("#asdf"), false, "doesn't match wrong selector");
+
     test.done();
   },
 
@@ -1392,6 +1421,33 @@ exports.tests = {
 
     var html = fs.readFileSync(path.resolve(__dirname, "files/reddit.html"));
     jsdom.jsdom(html.toString());
+
+    test.done();
+  },
+
+  issue_530_async_load_events : function(test) {
+    test.expect(1);
+
+    var doc = jsdom.jsdom('<html><head></head><body></body></html>');
+    var window = doc.createWindow();
+
+    // Add the load event after the document is already created; it shouldn't
+    // fire until nextTick. The test will fail (with a timeout) if it has
+    // already fired.
+    window.addEventListener('load', function () {
+      test.ok(true);
+      test.done();
+    });
+  },
+
+  inputs_should_default_to_type_text : function(test) {
+    test.expect(3);
+
+    var doc = jsdom.jsdom('<html><head></head><body><input id="input" /></body></html>');
+    var inputEl = doc.getElementById("input");
+    test.equal(inputEl.hasAttribute('type'), true);
+    test.equal(inputEl.getAttribute('type'), 'text');
+    test.equal(inputEl.type, 'text');
 
     test.done();
   }
